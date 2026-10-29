@@ -56,6 +56,9 @@ New accounts must confirm their email by default. You can turn this off under **
 3. In Supabase → **Authentication → URL Configuration**, set **Site URL** to your Render URL (e.g. `https://tv-tracker.onrender.com`) so confirmation emails link back to the app.
 
 Every push redeploys. The `EXPO_PUBLIC_*` values are baked in at build time, so after changing them use **Manual Deploy → Clear build cache & deploy**.
+
+The web home-screen icon is a black square with red **TV** above **Tracker**, both the same width. The manifest and Apple touch icon are configured in `public/`. After deploying an icon change, remove the old home-screen shortcut and add the site again; phones can cache the old icon. This adds home-screen branding, not offline support.
+
 ## Structure
 
 ```
