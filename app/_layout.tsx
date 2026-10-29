@@ -1,10 +1,15 @@
+﻿import Ionicons from '@expo/vector-icons/Ionicons';
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { colors } from '@/constants/theme';
+import { WatchPromptProvider } from '@/components/WatchPrompt';
+import { SyncProvider } from '@/store/sync';
+import { TrackerProvider } from '@/store/tracker';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -12,45 +17,58 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   anchor: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+const theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.accent,
+    background: colors.bg,
+    card: colors.bg,
+    text: colors.text,
+    border: colors.border,
+  },
+};
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
+export default function RootLayout() {
+  const [loaded, error] = useFonts(Ionicons.font);
+
   useEffect(() => {
     if (error) throw error;
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
+    if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
 
-  if (!loaded) {
-    return null;
-  }
-
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  if (!loaded) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <TrackerProvider>
+      <SyncProvider>
+        <WatchPromptProvider>
+          <ThemeProvider value={theme}>
+            <StatusBar style="light" />
+            <Stack
+              screenOptions={{
+                headerStyle: { backgroundColor: colors.bg },
+                headerTintColor: colors.text,
+                headerShadowVisible: false,
+                headerBackButtonDisplayMode: 'minimal',
+              }}>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Back' }} />
+              <Stack.Screen name="show/[id]" options={{ title: '' }} />
+              <Stack.Screen name="episode/[id]" options={{ title: '' }} />
+              <Stack.Screen name="person/[id]" options={{ title: '' }} />
+              <Stack.Screen name="account" options={{ title: 'Account & backup' }} />
+            </Stack>
+          </ThemeProvider>
+        </WatchPromptProvider>
+      </SyncProvider>
+    </TrackerProvider>
   );
 }

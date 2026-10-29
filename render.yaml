@@ -1,0 +1,21 @@
+# Render Blueprint: deploys the web version of the app as a free static site.
+# Render dashboard > New > Blueprint > pick this repo. You'll be asked for the two Supabase values.
+services:
+  - type: web
+    name: tv-tracker
+    runtime: static
+    buildCommand: npm ci && npx expo export --platform web
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # EXPO_PUBLIC_* values are baked into the JS at build time; redeploy after changing them.
+      - key: EXPO_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+    # Single-page app: send every path (e.g. /show/123) to index.html so expo-router can handle it.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
