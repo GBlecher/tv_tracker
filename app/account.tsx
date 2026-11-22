@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, 
 import { Button, SectionHeader } from '@/components/ui';
 import { colors, radius } from '@/constants/theme';
 import { exportBackup, pickBackup } from '@/lib/backup';
+import { useNotifications } from '@/store/notifications';
 import { useSync } from '@/store/sync';
 import { useTracker } from '@/store/tracker';
 
@@ -30,9 +31,38 @@ export default function AccountScreen() {
     <ScrollView style={{ backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
       <SectionHeader title="Account & sync" />
       <SyncSection />
+      <SectionHeader title="Episode notifications" />
+      <NotificationsSection />
       <SectionHeader title="Backup & restore" />
       <BackupSection />
     </ScrollView>
+  );
+}
+
+function NotificationsSection() {
+  const notifications = useNotifications();
+  const unavailable = notifications.status === 'unsupported';
+  return (
+    <View style={styles.card}>
+      <Text style={styles.muted}>
+        Get one grouped catch-up alert when new episodes air. Alerts update as more episodes arrive, with a limit of
+        three notifications per day.
+      </Text>
+      {notifications.error && (
+        <Text style={[styles.muted, { color: colors.danger }]}>{notifications.error}</Text>
+      )}
+      {unavailable ? (
+        <Text style={styles.muted}>Push alerts are available in the iOS and Android apps.</Text>
+      ) : (
+        <Button
+          title={notifications.enabled ? 'Turn off episode notifications' : 'Enable episode notifications'}
+          icon={notifications.enabled ? 'notifications-off-outline' : 'notifications-outline'}
+          variant={notifications.enabled ? 'secondary' : 'primary'}
+          onPress={notifications.enabled ? notifications.disable : notifications.enable}
+          disabled={notifications.status === 'loading'}
+        />
+      )}
+    </View>
   );
 }
 

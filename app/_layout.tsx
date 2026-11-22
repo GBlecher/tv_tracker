@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 
 import { colors } from '@/constants/theme';
 import { WatchPromptProvider } from '@/components/WatchPrompt';
+import { NotificationProvider } from '@/store/notifications';
 import { SyncProvider } from '@/store/sync';
 import { TrackerProvider } from '@/store/tracker';
 
@@ -50,24 +51,26 @@ export default function RootLayout() {
   return (
     <TrackerProvider>
       <SyncProvider>
-        <WatchPromptProvider>
-          <ThemeProvider value={theme}>
-            <StatusBar style="light" />
-            <Stack
-              screenOptions={{
-                headerStyle: { backgroundColor: colors.bg },
-                headerTintColor: colors.text,
-                headerShadowVisible: false,
-                headerBackButtonDisplayMode: 'minimal',
-              }}>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Back' }} />
-              <Stack.Screen name="show/[id]" options={{ title: '' }} />
-              <Stack.Screen name="episode/[id]" options={{ title: '' }} />
-              <Stack.Screen name="person/[id]" options={{ title: '' }} />
-              <Stack.Screen name="account" options={{ title: 'Account & backup' }} />
-            </Stack>
-          </ThemeProvider>
-        </WatchPromptProvider>
+        <NotificationProvider>
+          <WatchPromptProvider>
+            <ThemeProvider value={theme}>
+              <StatusBar style="light" />
+              <Stack
+                screenOptions={{
+                  headerStyle: { backgroundColor: colors.bg },
+                  headerTintColor: colors.text,
+                  headerShadowVisible: false,
+                  headerBackButtonDisplayMode: 'minimal',
+                }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Back' }} />
+                <Stack.Screen name="show/[id]" options={{ title: '' }} />
+                <Stack.Screen name="episode/[id]" options={{ title: '' }} />
+                <Stack.Screen name="person/[id]" options={{ title: '' }} />
+                <Stack.Screen name="account" options={{ title: 'Account & backup' }} />
+              </Stack>
+            </ThemeProvider>
+          </WatchPromptProvider>
+        </NotificationProvider>
       </SyncProvider>
     </TrackerProvider>
   );

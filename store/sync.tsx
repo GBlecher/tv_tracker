@@ -35,7 +35,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
   const dataRef = useRef(data);
   dataRef.current = data;
-  const userId = session?.user.id ?? null;
+  const userId = session && !session.user.is_anonymous ? session.user.id : null;
   const lastSyncedJson = useRef<string | null>(null);
   const running = useRef(false);
   const again = useRef(false);
@@ -127,7 +127,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const value = useMemo<SyncValue>(
     () => ({
       configured: !!supabase,
-      session,
+      session: session?.user.is_anonymous ? null : session,
       email: session?.user.email ?? null,
       status,
       error,

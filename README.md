@@ -47,6 +47,46 @@ Your followed shows and watched episodes are stored on the device. Go to **Profi
 4. Restart `npx expo start`.
 
 New accounts must confirm their email by default. You can turn this off under **Authentication → Sign In / Providers → Email → Confirm email**.
+
+### Episode push notifications (iOS and Android)
+
+Episode alerts are opt-in under **Profile → Account, sync & backup → Episode notifications**. They include one action button and group new releases into a catch-up alert, limited to three sends per device per local day. Opening the app clears that device's pending group. iOS can report an explicit dismissal when the OS delivers its dismissal callback; Expo does not expose a reliable Android swipe-away callback, so on Android the group may remain active until the app is opened. Android can update an active notification; iOS groups/collapses updates where the OS allows, but may show more than one item for an already-delivered alert.
+
+Push delivery while the app is closed needs the Supabase Edge Functions and a scheduled job; the static Render site alone cannot send pushes.
+
+1. In Supabase **Authentication → Providers**, enable **Anonymous Sign-Ins**. This lets people who do not create an account receive notifications; their device subscription remains tied to that anonymous session.
+2. Run the updated [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor.
+3. Link this folder to the Supabase project with the Supabase CLI, then deploy `notification-device` and `dispatch-notifications`:
+
+   ```bash
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase functions deploy notification-device
+   supabase functions deploy dispatch-notifications
+   ```
+
+4. In the Expo account, initialize an EAS project for this app (`npx eas-cli@latest init`) and configure iOS/Android push credentials in EAS. The generated `extra.eas.projectId` is used to request the device's Expo Push Token. For cross-platform testing, install an EAS-built app on a physical device; Android remote push requires a development/production build rather than Expo Go. Web push is not supported by this feature.
+5. In Supabase, enable the `pg_cron`, `pg_net`, and Vault extensions. In **Database → Vault**, save two secrets named `tv_tracker_project_url` (the project URL) and `tv_tracker_service_role_key` (the service-role key). Never put the service-role key in the app or source control. Then schedule the dispatcher every 15 minutes:
+
+   ```sql
+   select cron.schedule(
+     'tv-tracker-episode-notifications',
+     '*/15 * * * *',
+     $$select net.http_post(
+       url := (select decrypted_secret from vault.decrypted_secrets where name = 'tv_tracker_project_url')
+         || '/functions/v1/dispatch-notifications',
+       headers := jsonb_build_object(
+         'Content-Type', 'application/json',
+         'Authorization', 'Bearer ' || (
+           select decrypted_secret from vault.decrypted_secrets where name = 'tv_tracker_service_role_key'
+         )
+       ),
+       body := '{}'::jsonb
+     );$$
+   );
+   ```
+
+   Run the SQL only once. To change the schedule, unschedule the existing job before adding another. Push permissions are requested only after the user opts in; the notification worker checks TVmaze schedules and sends alerts via Expo Push Service.
+
 ## Deploy the web app on Render
 
 [render.yaml](render.yaml) deploys the web version as a free static site (`npx expo export --platform web` → `dist/`, with every path rewritten to `index.html`).
